@@ -21,24 +21,13 @@ const AddVariableForm = ({ setOpenModal, updateVariables }) => {
       if (response.status === 200) {
         updateVariables();
         closeModal();
-        resolve(true);
+        resolve();
       } else {
-        console.log('Error', response);
-        reject(new Error('Variable ID In Use'));
+        reject(response);
       }
     });
   };
 
-  //   const handleInputChange = (event) => {
-  //     switch (event.target.id) {
-  //       case 'name':
-  //         setFormInput({ name: event.target.value, id: formInput.id });
-  //         break;
-  //       case 'id':
-  //         setFormInput({ name: formInput.name, id: event.target.value });
-  //         break;
-  //     }
-  //   };
   return (
     <Formik
       initialValues={defaultForm}
@@ -52,12 +41,12 @@ const AddVariableForm = ({ setOpenModal, updateVariables }) => {
         }
         return errors;
       }}
-      onSubmit={(values, actions) => {
+      onSubmit={async (values, actions) => {
+        console.log('Submitting');
         try {
-          submitForm(values);
+          await submitForm(values);
         } catch (error) {
-          actions.console.log(error);
-          actions.setErrors('id', error.message);
+          actions.setErrors({ id: error.statusText });
         }
       }}
     >
@@ -67,10 +56,11 @@ const AddVariableForm = ({ setOpenModal, updateVariables }) => {
         touched,
         handleChange,
         handleBlur,
+        handleSubmit,
         isSubmitting,
         /* and other goodies */
       }) => (
-        <form className="box">
+        <form className="box" onSubmit={handleSubmit}>
           <div className="field">
             <label className="label">Variable Name</label>
             <div className="control">
@@ -107,7 +97,11 @@ const AddVariableForm = ({ setOpenModal, updateVariables }) => {
           </div>
           <div className="field is-grouped">
             <div className="control">
-              <button className="button is-link" type="submit">
+              <button
+                className={`button is-link `}
+                disabled={isSubmitting}
+                type="submit"
+              >
                 Submit
               </button>
             </div>

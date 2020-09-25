@@ -42,7 +42,11 @@ app.get('/', async (req, res) => {
   const db = await getMonkClient();
   const variables = await db.get('variables').find();
   res.json(variables);
-  res.send();
+});
+app.get('/variable/:id', async (req, res) => {
+  const db = await getMonkClient();
+  const variables = await db.get('variables').find({ id: req.params.id });
+  res.json(variables);
 });
 
 app.post('/variable', async (req, res) => {
@@ -57,6 +61,7 @@ app.post('/variable', async (req, res) => {
   } else {
     const idExists = await db.get('variables').find({ id: body.id });
     if (!idExists.length) {
+      body.timeValues = [];
       await db.get('variables').insert(body);
       console.log(`Inserted ${body.name}`);
     } else {
@@ -67,10 +72,38 @@ app.post('/variable', async (req, res) => {
   }
   res.send();
 });
+
+app.patch('/variable', async (req, res) => {
+  const db = await getMonkClient();
+  const body = req.body;
+  if (body.id === '') {
+    res.statusCode = 400;
+    res.statusMessage = 'id Cannot be empty';
+  } else if (body.name === '') {
+    res.statusCode = 400;
+    res.statusMessage = 'name Cannot be empty';
+  } else {
+    const idExists = await db.get('variables').find({ id: body.id });
+    console.log(body);
+    if (idExists.length) {
+      await db
+        .get('variables')
+        .findOneAndUpdate(
+          { id: body.id },
+          { $set: { timeValues: body.timeValues, name: body.name } }
+        );
+      console.log(`Updated ${body.name}`);
+    } else {
+      console.log(`ID '${body.id}' does not Exists`);
+      res.statusCode = 422;
+      res.statusMessage = "A Variable with that ID doesn't exists";
+    }
+  }
+  res.send();
+});
 app.delete('/variable', async (req, res) => {
   const db = await getMonkClient();
   const body = req.body;
-  console.log(req);
   const idExists = await db.get('variables').find({ id: body.id });
   if (idExists.length) {
     await db.get('variables').remove({ id: body.id });
